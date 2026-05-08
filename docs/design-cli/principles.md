@@ -133,14 +133,14 @@ The `which` index is hand-curated (or generated from a feature manifest). Rankin
 
 The CLI is the machinery; the SKILL.md (or `.cursor/rules/*.md`, or `AGENTS.md`) is the agent's manual. They must stay in lockstep — every flag in the prompt must exist; every command path must resolve. Enforce this with a verifier in CI.
 
-The printing-press analogue is `verify_skill.py`, which checks four invariants:
+`tools/design-cli-verify` ships four `skill-*` rules that cross-check SKILL.md against the CLI's `agent-context` output (so they don't need to parse source):
 
-- `flag-names`: every `--flag` in SKILL.md is declared in code.
-- `flag-commands`: every `--flag` on a command is declared on that command.
-- `positional-args`: positional args in bash recipes match command signatures.
-- `unknown-command`: every command path in SKILL.md exists.
+- `skill-flag-names` — every `--flag` in SKILL.md recipes is declared in `globalFlags[]` ∪ any `command.flags[]` (or in the user's `commonFlags` allowlist).
+- `skill-flag-commands` — every flag used on a specific command is declared on that command, not on a sibling.
+- `skill-positional-args` — positional counts in recipes match `command.positionals[]`.
+- `skill-unknown-commands` — every command path in recipes and in `## Command Reference` inline mentions exists in `commands[].path`.
 
-`tools/design-cli-verify` ships a runtime equivalent.
+See `docs/design-cli/scaffold/SKILL.md` for the template the scaffold ships, and `tools/design-cli-verify/README.md` for the parsing rules (H2 scoping, recipe extraction, COMMON_FLAGS allowlist).
 
 ## The Creativity Ladder
 

@@ -24,7 +24,9 @@ bun run src/verify.ts ./path/to/config.json
   "sampleReadCommand": "example list",
   "sampleMutateCommand": "example create --title test",
   "capability": "list examples",
-  "knownField": "id"
+  "knownField": "id",
+  "skill": "./SKILL.md",
+  "commonFlags": ["help", "version"]
 }
 ```
 
@@ -34,6 +36,8 @@ bun run src/verify.ts ./path/to/config.json
 - `sampleMutateCommand` — a mutating invocation. Used to verify `--dry-run`/`--yes` semantics.
 - `capability` — natural-language phrase your `which` should resolve.
 - `knownField` — a field guaranteed to exist on the read sample's records (used for `--select`).
+- `skill` *(optional)* — path to a SKILL.md to validate. When set, the four `skill-*` rules run; when absent, they warn "skill not configured" without failing.
+- `commonFlags` *(optional)* — additional flag names (without `--`) that the SKILL pairing rules should accept as declared without source proof. Default allowlist is just `help`, `version`. Use this for external-tool flags from installers, package managers, etc.
 
 ## Exit codes
 
@@ -60,5 +64,39 @@ bun run src/verify.ts ./path/to/config.json
 | `completion`          | `completion bash` emits a non-empty script with no stderr.                 |
 | `cache-bypass`        | If `--no-cache` is advertised in `--help`, sample command honors it.       |
 | `framework-commands`  | Standard meta-commands (`version`, `completion`, `doctor`, `which`, `agent-context`) appear in `--help`. |
+| `skill-flag-names`    | Every `--flag` in SKILL.md recipes is declared somewhere in the CLI (or in `commonFlags`). |
+| `skill-flag-commands` | Every flag used on a command in SKILL.md is declared on that command (or as a global). |
+| `skill-positional-args` | Positional-arg counts in SKILL.md recipes match the command's signature from `agent-context`. |
+| `skill-unknown-commands` | Every command path in SKILL.md (recipes + `## Command Reference` inline mentions) exists in `agent-context.commands[]`. |
 
-Failures are blocking. Warnings indicate "advisory" issues — typically a feature isn't claimed (no `--no-cache` advertised) so the corresponding rule has nothing to check.
+Failures are blocking. Warnings indicate "advisory" issues — typically a feature isn't claimed (no `--no-cache` advertised, no `skill` configured) so the corresponding rule has nothing to check.
+
+## SKILL.md format expectations
+
+The four `skill-*` rules expect printing-press's H2 conventions:
+
+- **Bash recipes** in fenced ` ```bash ` / ` ```sh ` / ` ```shell ` blocks. Lines beginning with the binary name (from `agent-context.cli.name`) are tokenized as recipes. Line continuations (`\`) are merged. Output is truncated at shell operators (`|`, `&&`, `>`).
+- **Inline command references** as backticked `` `<cli> <cmd>` `` mentions, but **only inside the `## Command Reference` H2 section**. This scoping prevents false positives on prose elsewhere.
+- The CLI binary name comes from `agent-context.cli.name` — keep it accurate.
+
+## agent-context schema
+
+This verifier expects `agent-context` v2:
+
+```json
+{
+  "schemaVersion": "2",
+  "cli":          { "name": "...", "version": "...", "description": "..." },
+  "exitCodes":    [{ "code": 0, "name": "ok" }, ...],
+  "globalFlags":  [{ "name": "json", "type": "boolean", "description": "..." }, ...],
+  "commands": [
+    { "path": "example create",
+      "description": "...",
+      "flags":       [{ "name": "title", "type": "string", "description": "..." }],
+      "positionals": [{ "name": "id",    "required": true }] }
+  ],
+  "capabilities": ["list issues", "..."]
+}
+```
+
+The scaffold's `src/agent-context-builder.ts` walks the citty `subCommands` tree to emit this shape automatically.

@@ -1,12 +1,6 @@
 import { defineCommand } from "citty";
 import { ExitCode } from "../errors";
-
-const index = [
-  { capability: "list examples",     command: "example list",   tokens: ["list", "example", "examples"] },
-  { capability: "create an example", command: "example create", tokens: ["create", "new", "make", "example"] },
-  { capability: "diagnose",          command: "doctor",         tokens: ["doctor", "diag", "diagnose", "health"] },
-  { capability: "sync local store",  command: "sync",           tokens: ["sync", "pull", "fetch", "refresh"] },
-];
+import { capabilities as index } from "../capabilities";
 
 export default defineCommand({
   meta: { name: "which", description: "Find the command that implements a capability (exit 0 = match, 2 = none)" },

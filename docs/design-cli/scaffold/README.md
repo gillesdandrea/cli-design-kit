@@ -42,6 +42,19 @@ bun run audit                          # run the design-cli verifier
 4. **Define `--compact` fields per command**. The default whitelist in `example-list.ts` is `id, title, status, updatedAt` — pick yours.
 5. **Climb the [Creativity Ladder](../principles.md#the-creativity-ladder)**. Add rung-3 commands (`sync`, `search`) when reads dominate. Add rung-4 (analytics: `stale`, `health`, `today`) once you have a synced store. Rung 5 (`similar`, `velocity`) is a research project — earn it.
 
-## Pairing follow-up (deferred)
+## CLI ↔ SKILL.md pairing
 
-The printing-press toolchain pairs every CLI with a `SKILL.md` and an MCP twin. Not scaffolded here. When you're ready: a future `/design-cli pair <cli-path>` mode will generate a verified SKILL.md and a citty→MCP bridge.
+`SKILL.md` is the agent-facing manual. It must stay in lockstep with the CLI — every flag mentioned must exist; every command path must resolve. The verifier enforces this:
+
+| Rule                      | Catches                                                                  |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `skill-flag-names`        | flags in SKILL.md not declared anywhere in the CLI                       |
+| `skill-flag-commands`     | a flag used on a command but not declared on it (or as a global)          |
+| `skill-positional-args`   | positional-arg counts in recipes that don't match the command signature   |
+| `skill-unknown-commands`  | command paths in `## Command Reference` or recipes that don't exist       |
+
+When you edit the CLI, run `bun run audit` — it cross-checks SKILL.md against the live `agent-context` output. The four pairing rules sit alongside the 15 agent-readiness rules.
+
+## MCP twin (deferred)
+
+A future `/design-cli pair <cli-path>` will generate a citty→MCP bridge so the CLI's commands surface as MCP tools.

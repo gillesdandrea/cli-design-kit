@@ -17,6 +17,10 @@ import select from "./rules/select";
 import completion from "./rules/completion";
 import cacheBypass from "./rules/cache-bypass";
 import frameworkCommands from "./rules/framework-commands";
+import skillFlagNames from "./rules/skill-flag-names";
+import skillFlagCommands from "./rules/skill-flag-commands";
+import skillPositionalArgs from "./rules/skill-positional-args";
+import skillUnknownCommands from "./rules/skill-unknown-commands";
 
 const rules: Rule[] = [
   helpRuns,
@@ -34,6 +38,10 @@ const rules: Rule[] = [
   completion,
   cacheBypass,
   frameworkCommands,
+  skillFlagNames,
+  skillFlagCommands,
+  skillPositionalArgs,
+  skillUnknownCommands,
 ];
 
 async function main() {
@@ -50,6 +58,7 @@ async function main() {
   const config = (await cfgFile.json()) as VerifyConfig;
 
   const binAbs = resolve(configPath, "..", config.bin);
+  if (config.skill) config.skill = resolve(configPath, "..", config.skill);
   const target: Target = config.runner
     ? { argv0: config.runner, argv: [binAbs] }
     : { argv0: binAbs, argv: [] };

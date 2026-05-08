@@ -57,4 +57,12 @@ Each item maps to a `design-cli-verify` rule (right column). Run `bun run audit`
 
 - [ ] `bun install && bun run build` produces a single binary or invokable entry — *manual review*
 - [ ] `--version` reflects the published version (no `0.0.0-dev` in releases) — *manual review*
-- [ ] CLI ↔ SKILL.md pairing (if applicable): every flag/command in the prompt exists in the binary — *future verifier*
+
+## Pairing (CLI ↔ SKILL.md)
+
+Set `"skill": "./SKILL.md"` in the verify config to enable. Skipped (warn) when absent.
+
+- [ ] Every `--flag` in SKILL.md recipes exists in the CLI (global or per-command) — `skill-flag-names`
+- [ ] Each flag is used on a command that actually accepts it — `skill-flag-commands`
+- [ ] Recipe positional-arg counts match the command's signature — `skill-positional-args`
+- [ ] Every command path (recipes + `## Command Reference` inline) resolves — `skill-unknown-commands`

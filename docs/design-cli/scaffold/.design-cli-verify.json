@@ -4,5 +4,6 @@
   "sampleReadCommand": "example list",
   "sampleMutateCommand": "example create --title test",
   "capability": "list examples",
-  "knownField": "id"
+  "knownField": "id",
+  "skill": "./SKILL.md"
 }

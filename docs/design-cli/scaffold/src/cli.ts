@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
-import { defineCommand, runCommand, showUsage } from "citty";
+import { defineCommand, runCommand, showUsage, type CommandDef } from "citty";
 
 import { globalArgs } from "./flags";
 import { ExitCode } from "./errors";
 import example from "./commands/example";
 import which from "./commands/which";
-import agentContext from "./commands/agent-context";
+import agentContext, { setRoot as setAgentContextRoot } from "./commands/agent-context";
 import version from "./commands/version";
 import completion from "./commands/completion";
 import doctor from "./commands/doctor";
@@ -32,6 +32,8 @@ const main = defineCommand({
     feedback,
   },
 });
+// `main` is narrowed by `globalArgs as const`; setter wants generic CommandDef.
+setAgentContextRoot(() => main as unknown as CommandDef);
 
 const rawArgs = process.argv.slice(2);
 
