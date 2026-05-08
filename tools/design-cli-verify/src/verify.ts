@@ -23,27 +23,27 @@ import skillPositionalArgs from "./rules/skill-positional-args";
 import skillUnknownCommands from "./rules/skill-unknown-commands";
 import mcpTwinShape from "./rules/mcp-twin-shape";
 
-const rules: Rule[] = [
-  helpRuns,
-  versionShape,
-  jsonMode,
-  quietMode,
-  agentPreset,
-  typedExitCodes,
-  noColorHonored,
-  ttyAutodetect,
-  agentContext,
-  noPrompts,
-  which,
-  select,
-  completion,
-  cacheBypass,
-  frameworkCommands,
-  skillFlagNames,
-  skillFlagCommands,
-  skillPositionalArgs,
-  skillUnknownCommands,
-  mcpTwinShape,
+const rules: { name: string; run: Rule }[] = [
+  { name: "help-runs", run: helpRuns },
+  { name: "version-shape", run: versionShape },
+  { name: "json-mode", run: jsonMode },
+  { name: "quiet-mode", run: quietMode },
+  { name: "agent-preset", run: agentPreset },
+  { name: "typed-exit-codes", run: typedExitCodes },
+  { name: "no-color-honored", run: noColorHonored },
+  { name: "tty-autodetect", run: ttyAutodetect },
+  { name: "agent-context", run: agentContext },
+  { name: "no-prompts", run: noPrompts },
+  { name: "which", run: which },
+  { name: "select", run: select },
+  { name: "completion", run: completion },
+  { name: "cache-bypass", run: cacheBypass },
+  { name: "framework-commands", run: frameworkCommands },
+  { name: "skill-flag-names", run: skillFlagNames },
+  { name: "skill-flag-commands", run: skillFlagCommands },
+  { name: "skill-positional-args", run: skillPositionalArgs },
+  { name: "skill-unknown-commands", run: skillUnknownCommands },
+  { name: "mcp-twin-shape", run: mcpTwinShape },
 ];
 
 async function main() {
@@ -61,6 +61,7 @@ async function main() {
 
   const binAbs = resolve(configPath, "..", config.bin);
   if (config.skill) config.skill = resolve(configPath, "..", config.skill);
+  if (config.mcpBin) config.mcpBin = resolve(configPath, "..", config.mcpBin);
   const target: Target = config.runner
     ? { argv0: config.runner, argv: [binAbs] }
     : { argv0: binAbs, argv: [] };
@@ -68,9 +69,9 @@ async function main() {
   const results: RuleResult[] = [];
   for (const r of rules) {
     try {
-      results.push(await r(target, config));
+      results.push(await r.run(target, config));
     } catch (e) {
-      results.push({ rule: r.name || "unknown", severity: "fail", detail: `threw: ${(e as Error).message}` });
+      results.push({ rule: r.name, severity: "fail", detail: `threw: ${(e as Error).message}` });
     }
   }
 

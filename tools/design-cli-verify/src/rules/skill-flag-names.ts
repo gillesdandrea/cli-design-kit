@@ -2,8 +2,9 @@ import type { Rule } from "../types";
 import { loadSkillState } from "../skill-parse";
 
 const rule: Rule = async (target, config) => {
-  const state = await loadSkillState(target, config);
-  if (!state) return { rule: "skill-flag-names", severity: "warn", detail: "skill not configured" };
+  const load = await loadSkillState(target, config);
+  if (load.kind === "skipped") return { rule: "skill-flag-names", severity: "warn", detail: load.reason };
+  const state = load.state;
 
   // Build a set of every declared flag name (globals + per-command).
   const declared = new Set<string>(state.commonFlags);

@@ -11,6 +11,11 @@ export type VerifyConfig = {
   commonFlags?: string[];
   /** Argv to start an MCP server from `bin` (e.g., ["mcp"]). When set, the mcp-twin-shape rule runs. */
   mcpArgs?: string[];
+  /** Path to a separate MCP server binary (relative to config file). When set, the
+   *  mcp-twin-shape rule spawns `[mcpBin, ...mcpArgs]` instead of `[bin, ...mcpArgs]`.
+   *  In this mode the count cross-check is skipped (the binaries are decoupled);
+   *  per-tool shape is still validated. */
+  mcpBin?: string;
 };
 
 export type AgentContextV2 = {

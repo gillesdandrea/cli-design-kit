@@ -13,19 +13,28 @@ export type SkillState = {
   knownPaths: string[];
 };
 
-/** Run agent-context, parse SKILL.md. Returns null if skill not configured. `config.skill` must be absolute by the time it reaches here. */
+export type SkillLoad =
+  | { kind: "ok"; state: SkillState }
+  | { kind: "skipped"; reason: string };
+
+/** Run agent-context, parse SKILL.md. Returns "skipped" with a reason when the skill is unconfigured or agent-context isn't usable. */
 export async function loadSkillState(
   target: Target,
   config: VerifyConfig,
-): Promise<SkillState | null> {
-  if (!config.skill) return null;
+): Promise<SkillLoad> {
+  if (!config.skill) return { kind: "skipped", reason: "skill not configured" };
   const skillPath = config.skill;
   const skillText = await Bun.file(skillPath).text();
-  const ctx = await fetchAgentContext(() => run(target, { args: ["agent-context"] }));
+  let ctx: AgentContextV2;
+  try {
+    ctx = await fetchAgentContext(() => run(target, { args: ["agent-context"] }));
+  } catch (e) {
+    return { kind: "skipped", reason: `agent-context unavailable (${(e as Error).message})` };
+  }
   const knownPaths = ctx.commands.map(c => c.path);
   const parsed = parseSkill(skillText, ctx.cli.name, knownPaths);
   const commonFlags = new Set([...DEFAULT_COMMON_FLAGS, ...(config.commonFlags ?? [])]);
-  return { ctx, parsed, skillPath, skillText, commonFlags, knownPaths };
+  return { kind: "ok", state: { ctx, parsed, skillPath, skillText, commonFlags, knownPaths } };
 }
 
 export type Recipe = {

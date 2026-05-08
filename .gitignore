@@ -24,3 +24,6 @@ bun.lock
 
 # Local plan/scratch files
 *.local.md
+
+# Temp audit configs (e.g. .tmp-linear-audit/ from the source-corpus audit)
+/.tmp-*/

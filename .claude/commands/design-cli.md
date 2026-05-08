@@ -67,14 +67,22 @@ Argument: `<path>` to an existing CLI directory or binary.
 
 1. Locate the binary. If `<path>` is a directory, look for `dist/`, `bin/`, or `package.json#bin`. If a binary path can't be derived, ask the user for it.
 2. **Auto-discover SKILL.md.** If `<path>` is a directory, check for `<path>/SKILL.md` (case-sensitive). If present, include it in the config as `"skill": "./SKILL.md"`. If absent, omit the field (the four `skill-*` rules will warn "skill not configured" rather than fail).
-3. **Auto-discover the MCP subcommand.** Run `<cli> agent-context | jq '.commands[].path' | grep -w mcp`. If `mcp` is a real subcommand, include `"mcpArgs": ["mcp"]` in the config (the `mcp-twin-shape` rule will boot it via JSON-RPC). If not, omit the field.
-4. Build a `verify.json` config in a temp file:
+3. **Auto-discover the MCP entry point.** First, run `<cli> agent-context | jq '.commands[].path' | grep -w mcp`. If `mcp` is a real subcommand, include `"mcpArgs": ["mcp"]` in the config. Otherwise, look for a sibling binary at `<dirname(bin)>/<basename(bin)>-pp-mcp`, then `<dirname(bin)>/<basename(bin)>-mcp`. If found, include `"mcpBin": "<that path>"` (matches printing-press's two-binary `<name>-pp-cli` / `<name>-pp-mcp` convention). If neither pattern matches, omit both — `mcp-twin-shape` will warn "mcp not configured".
+4. Build a `verify.json` config in a temp file. Subcommand pattern:
    ```json
    { "bin": "<absolute-path>", "runner": null,
      "sampleReadCommand": "<best guess>", "sampleMutateCommand": "<best guess>",
      "capability": "<best guess>", "knownField": "id",
      "skill": "./SKILL.md",
      "mcpArgs": ["mcp"] }
+   ```
+   Separate-binary pattern (printing-press style):
+   ```json
+   { "bin": "<absolute-path>", "runner": null,
+     "sampleReadCommand": "<best guess>", "sampleMutateCommand": "<best guess>",
+     "capability": "<best guess>", "knownField": "id",
+     "skill": "./SKILL.md",
+     "mcpBin": "<absolute-path-to-mcp-binary>" }
    ```
    Pull the best-guess values from the CLI's `--help` output. If you can't guess confidently, ask the user.
 5. Run `bun run /Users/gilles/dev/xp/cli-skill/tools/design-cli-verify/src/verify.ts <verify.json>`.

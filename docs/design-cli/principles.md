@@ -189,3 +189,18 @@ Climbing is judgment, not formula. Rung 3 is worth it when reads dominate and da
 - **Generic exit code 1.** It tells agents nothing. Classify or use 2.
 - **Output to stderr that should be stdout** (or vice versa). Stdout is the data; stderr is the explanation. Pipes break otherwise.
 - **Versionless schemas.** `agent-context` without a `schemaVersion` field is a breaking change waiting to happen.
+
+## Where we go further than the source corpus
+
+Auditing `linear-pp-cli` (the printing-press flagship) with our verifier surfaced six places where this scaffold takes a stricter or more agent-native stance than the generator does today. We picked the stricter side every time, on purpose — the gap is the point.
+
+| Surface              | printing-press                            | this scaffold                                   | Why we go further                                                                 |
+| -------------------- | ----------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `--quiet`            | "bare output, one value per line"         | silent stdout                                   | Silence is a stronger signal: agents can branch on `[ -z "$out" ]`.               |
+| Bad-flag exit code   | `1` (cobra default)                       | `2` (typed)                                     | Lets agents distinguish argument errors from logic errors without parsing stderr. |
+| TTY auto-detect      | always text unless `--json` is passed     | auto-JSON when stdout isn't a TTY               | One flag fewer for piped agent calls; humans see tables, agents see JSON.         |
+| `agent-context`      | not shipped                               | shipped (v2 schema, `readOnly` per command)     | Runtime introspection is the contract; SKILL.md and MCP twin are *derived* from it. |
+| `which <capability>` | absent (closest is `api browse`)          | shipped — natural-language → command path       | A focused capability lookup beats grepping `--help`.                              |
+| MCP twin             | separate binary (`<cli>-pp-mcp`)          | subcommand (`<cli> mcp`)                        | One install, one binary, one source of truth. Tradeoff: bigger binary.            |
+
+None of these are "fixes" to printing-press — they're a coherent extension of the same philosophy. If you scaffold from this repo and audit a printing-press CLI side-by-side, expect ~6 warnings/failures that map back to this table. They're informative, not blocking.

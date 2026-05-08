@@ -39,6 +39,7 @@ bun run src/verify.ts ./path/to/config.json
 - `skill` *(optional)* — path to a SKILL.md to validate. When set, the four `skill-*` rules run; when absent, they warn "skill not configured" without failing.
 - `commonFlags` *(optional)* — additional flag names (without `--`) that the SKILL pairing rules should accept as declared without source proof. Default allowlist is just `help`, `version`. Use this for external-tool flags from installers, package managers, etc.
 - `mcpArgs` *(optional)* — argv to start the CLI's MCP server (e.g., `["mcp"]` for a `<cli> mcp` subcommand pattern). When set, the `mcp-twin-shape` rule boots the server, runs JSON-RPC `initialize` + `tools/list`, and validates the shape. When absent, the rule warns "mcp not configured".
+- `mcpBin` *(optional)* — path to a separate MCP server binary (relative to the config file). For two-binary patterns like printing-press's `<cli>-pp-cli` + `<cli>-pp-mcp`. When set, the `mcp-twin-shape` rule spawns `[mcpBin, ...mcpArgs]` instead of `[bin, ...mcpArgs]`. The agent-context tool-count cross-check is skipped in this mode (the binaries are decoupled); per-tool shape is still validated, and the result is annotated `(shape-only — no agent-context cross-check)`.
 
 ## Exit codes
 
@@ -82,6 +83,14 @@ claude mcp add <name> $(which <name>) mcp
 ```
 
 Claude Code will spawn `<name> mcp` on demand and treat its tools as part of the session.
+
+If your CLI uses the printing-press two-binary pattern (`<name>-pp-cli` + `<name>-pp-mcp`):
+
+```sh
+claude mcp add <name> -- $(which <name>-pp-mcp)
+```
+
+For verification, set `mcpBin` to the MCP binary path; leave `mcpArgs` unset (or set it to extra startup args).
 
 ## SKILL.md format expectations
 

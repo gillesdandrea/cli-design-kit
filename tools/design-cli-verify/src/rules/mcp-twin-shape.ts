@@ -32,24 +32,31 @@ type JsonRpcMessage = {
 };
 
 const rule: Rule = async (target, config) => {
-  if (!config.mcpArgs || config.mcpArgs.length === 0) {
-    return { rule: "mcp-twin-shape", severity: "warn", detail: "mcp not configured (set mcpArgs)" };
+  const isSeparateBinary = !!config.mcpBin;
+  const hasMcpArgs = !!(config.mcpArgs && config.mcpArgs.length > 0);
+  if (!isSeparateBinary && !hasMcpArgs) {
+    return { rule: "mcp-twin-shape", severity: "warn", detail: "mcp not configured (set mcpArgs or mcpBin)" };
   }
 
-  // Get expected tool count from agent-context.
-  const ctxRun = await run(target, { args: ["agent-context"] });
-  if (ctxRun.exitCode !== 0) {
-    return { rule: "mcp-twin-shape", severity: "fail", detail: `agent-context failed: ${ctxRun.stderr.slice(0, 120)}` };
+  // Subcommand mode: fetch agent-context for the count cross-check. Separate-binary
+  // mode skips this — the MCP server and CLI are decoupled, so the CLI's command
+  // tree isn't authoritative for the MCP tool set.
+  let expected: number | null = null;
+  if (!isSeparateBinary) {
+    const ctxRun = await run(target, { args: ["agent-context"] });
+    if (ctxRun.exitCode === 0) {
+      try {
+        const ctx = JSON.parse(ctxRun.stdout.trim()) as AgentContextV2;
+        expected = expectedToolCount(ctx);
+      } catch { /* fall through to shape-only */ }
+    }
   }
-  let ctx: AgentContextV2;
-  try { ctx = JSON.parse(ctxRun.stdout.trim()) as AgentContextV2; }
-  catch { return { rule: "mcp-twin-shape", severity: "fail", detail: "agent-context not JSON" }; }
 
-  const expected = expectedToolCount(ctx);
-
-  // Spawn the MCP server.
+  const cmd = isSeparateBinary
+    ? [config.mcpBin!, ...(config.mcpArgs ?? [])]
+    : [target.argv0, ...target.argv, ...(config.mcpArgs ?? [])];
   const proc = Bun.spawn({
-    cmd: [target.argv0, ...target.argv, ...config.mcpArgs],
+    cmd,
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",
@@ -105,7 +112,7 @@ const rule: Rule = async (target, config) => {
     if (!Array.isArray(tools)) {
       return { rule: "mcp-twin-shape", severity: "fail", detail: "tools/list result.tools is not an array" };
     }
-    if (tools.length !== expected) {
+    if (expected !== null && tools.length !== expected) {
       const names = tools.map(t => t.name).join(", ");
       return { rule: "mcp-twin-shape", severity: "fail", detail: `expected ${expected} tools, got ${tools.length} (${names})` };
     }
@@ -116,7 +123,8 @@ const rule: Rule = async (target, config) => {
       const schema = t.inputSchema as { type?: string };
       if (schema.type !== "object") return { rule: "mcp-twin-shape", severity: "fail", detail: `tool ${JSON.stringify(t.name)} inputSchema.type !== "object"` };
     }
-    return { rule: "mcp-twin-shape", severity: "pass", detail: `MCP twin advertises ${tools.length} tools` };
+    const note = expected === null ? " (shape-only — no agent-context cross-check)" : "";
+    return { rule: "mcp-twin-shape", severity: "pass", detail: `MCP twin advertises ${tools.length} tools${note}` };
   } catch (e) {
     const stderr = await new Response(proc.stderr).text();
     return {
