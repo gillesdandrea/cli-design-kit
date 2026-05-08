@@ -1,0 +1,8 @@
+{
+  "bin": "./dist/demo-cli",
+  "runner": null,
+  "sampleReadCommand": "example list",
+  "sampleMutateCommand": "example create --title test",
+  "capability": "list examples",
+  "knownField": "id"
+}

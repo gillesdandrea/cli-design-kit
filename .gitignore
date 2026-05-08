@@ -1,0 +1,26 @@
+# Source-material repos (vendored for reference, not part of this project)
+/cli-printing-press/
+/printing-press-library/
+
+# Scaffolded demo CLIs produced by /design-cli (regenerable artifacts)
+/tools/design-cli-verify/demo-cli/
+**/demo-cli/
+
+# Build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+.cache/
+
+# Lockfiles for tools (kept inside the source-of-truth scaffold via its own .gitignore)
+bun.lock
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local plan/scratch files
+*.local.md

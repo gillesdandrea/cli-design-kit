@@ -1,0 +1,14 @@
+{
+  "name": "design-cli-verify",
+  "version": "0.1.0",
+  "description": "Runtime verifier for agent-ready CLIs (any language).",
+  "type": "module",
+  "bin": {
+    "design-cli-verify": "./src/verify.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.5.0"
+  }
+}
