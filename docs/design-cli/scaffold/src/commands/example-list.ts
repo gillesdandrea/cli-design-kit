@@ -13,7 +13,7 @@ const sampleLive = [
 ];
 
 export default defineCommand({
-  meta: { name: "list", description: "List examples (read-only; honors --select / --compact / --data-source)" },
+  meta: { name: "list", description: "List examples (read-only; honors --select / --compact / --data-source)", readOnly: true },
   args: withGlobals({}),
   async run({ args }) {
     applyAgentPreset(args);

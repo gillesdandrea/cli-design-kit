@@ -96,6 +96,18 @@ Exit 0 if all checks pass; exit 4 on auth issues; exit 5 on connectivity issues.
 
 For complete schema introspection, run `demo-cli agent-context` — it emits `{schemaVersion, cli, exitCodes, globalFlags, commands, capabilities}`. Treat that JSON as the contract.
 
+## MCP Twin
+
+`demo-cli mcp` runs an MCP server on stdio that exposes every non-framework command as an MCP tool. Read commands advertise `readOnlyHint: true`, so MCP hosts (Claude Code, Cursor) skip their "are you sure?" prompt for safe calls.
+
+Install in Claude Code:
+
+```bash
+claude mcp add demo-cli $(which demo-cli) mcp
+```
+
+The server lists three tools: `example_list`, `example_create`, `sync`. Framework commands (`agent-context`, `completion`, `doctor`, `feedback`, `version`, `which`, `profile`, the `mcp` server itself) are deliberately excluded — typed equivalents exist in the MCP host or the command is interactive.
+
 ## Exit Codes
 
 | Code | Meaning             | Agent should…                          |

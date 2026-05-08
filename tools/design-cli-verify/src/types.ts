@@ -9,6 +9,8 @@ export type VerifyConfig = {
   skill?: string;
   /** Extra flag names (without `--`) the SKILL pairing rules should accept as declared. */
   commonFlags?: string[];
+  /** Argv to start an MCP server from `bin` (e.g., ["mcp"]). When set, the mcp-twin-shape rule runs. */
+  mcpArgs?: string[];
 };
 
 export type AgentContextV2 = {
@@ -19,6 +21,7 @@ export type AgentContextV2 = {
   commands: {
     path: string;
     description?: string;
+    readOnly?: boolean;
     flags: { name: string; type: "string" | "boolean"; description?: string }[];
     positionals: { name: string; required: boolean; description?: string }[];
   }[];

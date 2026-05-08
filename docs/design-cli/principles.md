@@ -18,7 +18,7 @@ Humans and AI agents want opposite things from a CLI:
 
 Bad CLIs pick a side. Good CLIs offer both modes and switch deterministically — usually based on TTY detection plus a small set of override flags. The patterns below codify how to do that without bolting on `--json` as an afterthought.
 
-## The 13 patterns
+## The 14 patterns
 
 ### 1. Single `--agent` preset flag
 
@@ -141,6 +141,27 @@ The CLI is the machinery; the SKILL.md (or `.cursor/rules/*.md`, or `AGENTS.md`)
 - `skill-unknown-commands` — every command path in recipes and in `## Command Reference` inline mentions exists in `commands[].path`.
 
 See `docs/design-cli/scaffold/SKILL.md` for the template the scaffold ships, and `tools/design-cli-verify/README.md` for the parsing rules (H2 scoping, recipe extraction, COMMON_FLAGS allowlist).
+
+### 14. Pair the CLI with an MCP twin
+
+Shell agents (terminal users, Claude Code's Bash tool) call your CLI directly. IDE agents (Claude Code's tool surface, Cursor, etc.) want a typed, parameter-validated tool API — that's what an MCP server gives them. Same capabilities, two surfaces.
+
+The cheapest way to ship both: a `<cli> mcp` subcommand that boots an MCP server on stdio. The server reads `agent-context` at startup, generates one tool per non-framework command, and shells out to *itself* (`process.execPath`) for tool calls. No second binary; runtime tool generation auto-syncs with command changes.
+
+**When it pays off**: anytime an IDE agent is part of the workflow. Claude Code users install with one command:
+
+```sh
+claude mcp add <name> $(which <name>) mcp
+```
+
+**Filtering rule**: framework commands and command groups are *not* MCP tools.
+
+- Excluded: `agent-context`, `completion`, `doctor`, `feedback`, `help`, `mcp` (recursion guard), `profile`, `version`, `which`. Reasoning: typed equivalents exist in MCP itself (capability listing, version channel) or the command is interactive / shell-only.
+- Excluded: command groups — paths that are *prefixes* of other paths. (`example` is excluded because `example list` and `example create` exist.)
+
+**`readOnly` hint discipline**: set `meta.readOnly: true` on every read command. The MCP server propagates that to `readOnlyHint: true, destructiveHint: false`, and the host (Claude Code) skips its "are you sure?" prompt for safe calls. Default omitted = host assumes worst case.
+
+**Reference**: scaffold's `src/commands/mcp.ts` + `src/mcp/*.ts`. Verifier rule: `mcp-twin-shape`.
 
 ## The Creativity Ladder
 

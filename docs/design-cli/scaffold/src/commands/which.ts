@@ -3,7 +3,7 @@ import { ExitCode } from "../errors";
 import { capabilities as index } from "../capabilities";
 
 export default defineCommand({
-  meta: { name: "which", description: "Find the command that implements a capability (exit 0 = match, 2 = none)" },
+  meta: { name: "which", description: "Find the command that implements a capability (exit 0 = match, 2 = none)", readOnly: true },
   args: {
     query: { type: "positional", required: true, valueHint: "QUERY" },
   },

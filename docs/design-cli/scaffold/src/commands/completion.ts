@@ -24,7 +24,7 @@ const fish = (cli: string) =>
   `complete -c ${cli} -f -n "__fish_use_subcommand" -a "${COMMANDS.replace(/--\S+/g, "").trim()}"\n`;
 
 export default defineCommand({
-  meta: { name: "completion", description: "Output a shell completion script (bash|zsh|fish)" },
+  meta: { name: "completion", description: "Output a shell completion script (bash|zsh|fish)", readOnly: true },
   args: {
     shell: { type: "positional", required: true, valueHint: "bash|zsh|fish" },
   },

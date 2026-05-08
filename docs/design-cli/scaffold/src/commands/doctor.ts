@@ -13,7 +13,7 @@ async function ping(url: string): Promise<boolean> {
 }
 
 export default defineCommand({
-  meta: { name: "doctor", description: "Diagnose env, creds, and connectivity" },
+  meta: { name: "doctor", description: "Diagnose env, creds, and connectivity", readOnly: true },
   async run() {
     const checks: Check[] = [];
 

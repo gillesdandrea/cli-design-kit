@@ -66,3 +66,10 @@ Set `"skill": "./SKILL.md"` in the verify config to enable. Skipped (warn) when 
 - [ ] Each flag is used on a command that actually accepts it — `skill-flag-commands`
 - [ ] Recipe positional-arg counts match the command's signature — `skill-positional-args`
 - [ ] Every command path (recipes + `## Command Reference` inline) resolves — `skill-unknown-commands`
+
+## MCP twin
+
+Set `"mcpArgs": ["mcp"]` in the verify config to enable. Skipped (warn) when absent.
+
+- [ ] MCP server boots on stdio, advertises one tool per non-framework, non-group command, every tool has `name` / `description` / `inputSchema` — `mcp-twin-shape`
+- [ ] Read commands carry `meta.readOnly: true` so MCP emits `readOnlyHint` — *manual review*

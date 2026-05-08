@@ -37,7 +37,7 @@ export default defineCommand({
       },
     }),
     list: defineCommand({
-      meta: { name: "list", description: "List saved profiles" },
+      meta: { name: "list", description: "List saved profiles", readOnly: true },
       run() {
         const rows = db.query<{ name: string }, []>(`SELECT name FROM profiles ORDER BY name`).all();
         for (const r of rows) process.stdout.write(`${r.name}\n`);

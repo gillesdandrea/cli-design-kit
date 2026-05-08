@@ -38,6 +38,7 @@ bun run src/verify.ts ./path/to/config.json
 - `knownField` — a field guaranteed to exist on the read sample's records (used for `--select`).
 - `skill` *(optional)* — path to a SKILL.md to validate. When set, the four `skill-*` rules run; when absent, they warn "skill not configured" without failing.
 - `commonFlags` *(optional)* — additional flag names (without `--`) that the SKILL pairing rules should accept as declared without source proof. Default allowlist is just `help`, `version`. Use this for external-tool flags from installers, package managers, etc.
+- `mcpArgs` *(optional)* — argv to start the CLI's MCP server (e.g., `["mcp"]` for a `<cli> mcp` subcommand pattern). When set, the `mcp-twin-shape` rule boots the server, runs JSON-RPC `initialize` + `tools/list`, and validates the shape. When absent, the rule warns "mcp not configured".
 
 ## Exit codes
 
@@ -68,8 +69,19 @@ bun run src/verify.ts ./path/to/config.json
 | `skill-flag-commands` | Every flag used on a command in SKILL.md is declared on that command (or as a global). |
 | `skill-positional-args` | Positional-arg counts in SKILL.md recipes match the command's signature from `agent-context`. |
 | `skill-unknown-commands` | Every command path in SKILL.md (recipes + `## Command Reference` inline mentions) exists in `agent-context.commands[]`. |
+| `mcp-twin-shape`      | Spawns the MCP server (`<bin> <mcpArgs>`); runs JSON-RPC `initialize` + `tools/list`; validates tool count (= non-excluded, non-group commands) and per-tool fields (`name`, `description`, `inputSchema`). |
 
-Failures are blocking. Warnings indicate "advisory" issues — typically a feature isn't claimed (no `--no-cache` advertised, no `skill` configured) so the corresponding rule has nothing to check.
+Failures are blocking. Warnings indicate "advisory" issues — typically a feature isn't claimed (no `--no-cache` advertised, no `skill` configured, no `mcpArgs` configured) so the corresponding rule has nothing to check.
+
+## Installing the MCP twin
+
+If your CLI ships an `mcp` subcommand (à la the scaffold's `<cli> mcp` pattern):
+
+```sh
+claude mcp add <name> $(which <name>) mcp
+```
+
+Claude Code will spawn `<name> mcp` on demand and treat its tools as part of the session.
 
 ## SKILL.md format expectations
 

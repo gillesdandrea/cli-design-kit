@@ -12,6 +12,7 @@
     "audit": "bun run ../../../tools/design-cli-verify/src/verify.ts ./.design-cli-verify.json"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "citty": "^0.1.6"
   },
   "devDependencies": {

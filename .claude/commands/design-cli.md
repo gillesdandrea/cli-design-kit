@@ -67,18 +67,20 @@ Argument: `<path>` to an existing CLI directory or binary.
 
 1. Locate the binary. If `<path>` is a directory, look for `dist/`, `bin/`, or `package.json#bin`. If a binary path can't be derived, ask the user for it.
 2. **Auto-discover SKILL.md.** If `<path>` is a directory, check for `<path>/SKILL.md` (case-sensitive). If present, include it in the config as `"skill": "./SKILL.md"`. If absent, omit the field (the four `skill-*` rules will warn "skill not configured" rather than fail).
-3. Build a `verify.json` config in a temp file:
+3. **Auto-discover the MCP subcommand.** Run `<cli> agent-context | jq '.commands[].path' | grep -w mcp`. If `mcp` is a real subcommand, include `"mcpArgs": ["mcp"]` in the config (the `mcp-twin-shape` rule will boot it via JSON-RPC). If not, omit the field.
+4. Build a `verify.json` config in a temp file:
    ```json
    { "bin": "<absolute-path>", "runner": null,
      "sampleReadCommand": "<best guess>", "sampleMutateCommand": "<best guess>",
      "capability": "<best guess>", "knownField": "id",
-     "skill": "./SKILL.md" }
+     "skill": "./SKILL.md",
+     "mcpArgs": ["mcp"] }
    ```
    Pull the best-guess values from the CLI's `--help` output. If you can't guess confidently, ask the user.
-4. Run `bun run /Users/gilles/dev/xp/cli-skill/tools/design-cli-verify/src/verify.ts <verify.json>`.
-5. Map each rule result back to `docs/design-cli/checklist.md` for the human-readable explanation.
-6. For each failure, propose the smallest patch that fixes it. Cite the recipe (e.g., "see `recipes.md` recipe 4 for `agent-context`"). For `skill-*` failures, the fix is usually editing SKILL.md — point at the offending line.
-7. End with: a summary line (`X pass, Y warn, Z fail`), the rung the CLI is on, and the next rung's payoff.
+5. Run `bun run /Users/gilles/dev/xp/cli-skill/tools/design-cli-verify/src/verify.ts <verify.json>`.
+6. Map each rule result back to `docs/design-cli/checklist.md` for the human-readable explanation.
+7. For each failure, propose the smallest patch that fixes it. Cite the recipe (e.g., "see `recipes.md` recipe 4 for `agent-context`"). For `skill-*` failures, the fix is usually editing SKILL.md — point at the offending line. For `mcp-twin-shape` failures, check the EXCLUDED_PATHS list in the user's `mcp/tools.ts`.
+8. End with: a summary line (`X pass, Y warn, Z fail`), the rung the CLI is on, and the next rung's payoff.
 
 ## Always do
 

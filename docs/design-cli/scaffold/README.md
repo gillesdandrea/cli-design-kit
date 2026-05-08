@@ -42,6 +42,20 @@ bun run audit                          # run the design-cli verifier
 4. **Define `--compact` fields per command**. The default whitelist in `example-list.ts` is `id, title, status, updatedAt` — pick yours.
 5. **Climb the [Creativity Ladder](../principles.md#the-creativity-ladder)**. Add rung-3 commands (`sync`, `search`) when reads dominate. Add rung-4 (analytics: `stale`, `health`, `today`) once you have a synced store. Rung 5 (`similar`, `velocity`) is a research project — earn it.
 
+## CLI ↔ SKILL.md ↔ MCP twin
+
+The scaffold ships three coordinated surfaces from one source tree:
+
+1. **CLI** — `dist/demo-cli`. Shell agents and humans use this directly.
+2. **SKILL.md** — agent-facing manual. Cross-checked against the CLI by `skill-*` rules.
+3. **MCP twin** — `demo-cli mcp` boots an MCP server on stdio. IDE agents (Claude Code, Cursor) speak this. The server reads `agent-context` at startup, generates one tool per non-framework command, and shells out to itself for each call.
+
+Install in Claude Code:
+
+```bash
+claude mcp add demo-cli "$(pwd)/dist/demo-cli" mcp
+```
+
 ## CLI ↔ SKILL.md pairing
 
 `SKILL.md` is the agent-facing manual. It must stay in lockstep with the CLI — every flag mentioned must exist; every command path must resolve. The verifier enforces this:

@@ -21,6 +21,7 @@ import skillFlagNames from "./rules/skill-flag-names";
 import skillFlagCommands from "./rules/skill-flag-commands";
 import skillPositionalArgs from "./rules/skill-positional-args";
 import skillUnknownCommands from "./rules/skill-unknown-commands";
+import mcpTwinShape from "./rules/mcp-twin-shape";
 
 const rules: Rule[] = [
   helpRuns,
@@ -42,6 +43,7 @@ const rules: Rule[] = [
   skillFlagCommands,
   skillPositionalArgs,
   skillUnknownCommands,
+  mcpTwinShape,
 ];
 
 async function main() {

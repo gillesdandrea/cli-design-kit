@@ -12,6 +12,7 @@ import doctor from "./commands/doctor";
 import profile from "./commands/profile";
 import sync from "./commands/sync";
 import feedback from "./commands/feedback";
+import mcp from "./commands/mcp";
 
 const main = defineCommand({
   meta: {
@@ -30,6 +31,7 @@ const main = defineCommand({
     profile,
     sync,
     feedback,
+    mcp,
   },
 });
 // `main` is narrowed by `globalArgs as const`; setter wants generic CommandDef.
