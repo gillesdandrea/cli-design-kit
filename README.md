@@ -2,9 +2,20 @@
 
 Design CLIs that work for humans and AI agents. Codifies the [printing-press](https://github.com/mvanhorn/cli-printing-press) philosophy — *agent-native design is just good CLI design taken seriously* — into a `/design-cli` slash command, a `bun` + `citty` scaffold, and a runtime verifier.
 
+This repo is packaged as a [Claude Code plugin](https://docs.claude.com/en/docs/claude-code/plugins).
+
+## Install
+
+```sh
+/plugin marketplace add <owner>/cli-skill   # or a local path: /plugin marketplace add /path/to/cli-skill
+/plugin install cli-skill
+```
+
+Then `/design-cli` is available in any project.
+
 ## What's here
 
-- **`.claude/commands/design-cli.md`** — the slash command. Three modes: `guided` (default), `audit <path>`, `scaffold <name>`.
+- **`commands/design-cli.md`** — the slash command. Three modes: `guided` (default), `audit <path>`, `scaffold <name>`.
 - **`docs/design-cli/`** — the knowledge base it loads:
   - [`principles.md`](docs/design-cli/principles.md) — 13 patterns + the Creativity Ladder + anti-patterns. Framework-agnostic.
   - [`recipes.md`](docs/design-cli/recipes.md) — the same patterns translated to `citty`.
@@ -12,6 +23,7 @@ Design CLIs that work for humans and AI agents. Codifies the [printing-press](ht
   - [`scaffold/`](docs/design-cli/scaffold/) — a `bun` + `citty` starter that ships all 13 patterns and passes the verifier 15/15 out of the box.
 - **`tools/design-cli-verify/`** — runtime verifier. 15 rules. Language-agnostic; works on any CLI binary.
 - **`tools/recipes-check/`** — extracts the TypeScript snippets from `recipes.md` and `tsc --noEmit`s them, so the docs can't rot.
+- **`.claude-plugin/`** — plugin + marketplace manifests.
 
 ## Quick start
 
@@ -21,7 +33,7 @@ Design CLIs that work for humans and AI agents. Codifies the [printing-press](ht
 /design-cli audit ./path/to/cli    # check against the 15 rules
 ```
 
-From a shell:
+From a shell (for repo dev work, not plugin users):
 
 ```sh
 bun install                        # install root tools

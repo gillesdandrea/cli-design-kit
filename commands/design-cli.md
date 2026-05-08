@@ -3,7 +3,7 @@ description: Design a CLI for both humans and AI agents. Modes — guided (defau
 argument-hint: "[audit <path> | scaffold <name>]"
 ---
 
-You are helping the user design or evaluate a CLI that works equally well for humans and for AI agents. Your guide is the printing-press philosophy at `docs/design-cli/principles.md`: **agent-native design is just good CLI design taken seriously.** Humans and agents want opposite things; the patterns below let one CLI serve both modes deterministically.
+You are helping the user design or evaluate a CLI that works equally well for humans and for AI agents. Your guide is the printing-press philosophy at `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/principles.md`: **agent-native design is just good CLI design taken seriously.** Humans and agents want opposite things; the patterns below let one CLI serve both modes deterministically.
 
 ## Mode dispatch
 
@@ -17,13 +17,15 @@ Tell the user which mode you've picked in one sentence. Then proceed.
 
 ## Loading rules
 
+All plugin-internal paths below use `${CLAUDE_PLUGIN_ROOT}`. Resolve it once at the start of the session via `echo "${CLAUDE_PLUGIN_ROOT}"` and use the resolved absolute path in subsequent `Read` calls.
+
 Don't read the reference docs in full upfront. Use them on demand:
 
-- `docs/design-cli/principles.md` — read the section headings always; deep-Read a section only when the user (or your reasoning) needs it.
-- `docs/design-cli/recipes.md` — only read in **scaffold** and **guided** modes when you're about to show citty code.
-- `docs/design-cli/checklist.md` — Read in **audit** mode after the verifier runs, to map rule IDs back to checklist items.
+- `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/principles.md` — read the section headings always; deep-Read a section only when the user (or your reasoning) needs it.
+- `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/recipes.md` — only read in **scaffold** and **guided** modes when you're about to show citty code.
+- `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/checklist.md` — Read in **audit** mode after the verifier runs, to map rule IDs back to checklist items.
 
-The verifier at `tools/design-cli-verify/src/verify.ts` is **executed** in audit mode (Bash), never Read.
+The verifier at `${CLAUDE_PLUGIN_ROOT}/tools/design-cli-verify/src/verify.ts` is **executed** in audit mode (Bash), never Read.
 
 ## Guided mode
 
@@ -32,7 +34,7 @@ Walk the user through, in order:
 1. **Domain and audience.** What API or domain? Who runs this CLI — humans, agents, or both? (Default: both.)
 2. **The Creativity Ladder rung.** Ask which rung they're aiming for (1=API wrapper → 5=behavioral insights). If they say "1", challenge: rung 2 (`--json`/`--select`/`--compact`) costs almost nothing. If they say "3+", verify reads dominate writes and the dataset fits on disk before committing to a `sync` store.
 3. **Command tree.** Propose verb-noun groupings (`<noun> <verb>`). Pull the framework command set from `principles.md` pattern #11 and confirm which to ship: `version`, `completion`, `doctor`, `which`, `agent-context`, `profile`, `feedback`. Reserve the names even if not all shipped.
-4. **Flag set.** Always include the universal globals (`--json`, `--compact`, `--select`, `--quiet`, `--no-color`, `--no-input`, `--yes`, `--dry-run`, `--no-cache`, `--data-source`, `--agent`, `--profile`). Point at recipe 0 (`docs/design-cli/recipes.md#0--sharedglobal-args-helper`) for the citty syntax.
+4. **Flag set.** Always include the universal globals (`--json`, `--compact`, `--select`, `--quiet`, `--no-color`, `--no-input`, `--yes`, `--dry-run`, `--no-cache`, `--data-source`, `--agent`, `--profile`). Point at recipe 0 (`${CLAUDE_PLUGIN_ROOT}/docs/design-cli/recipes.md#0--sharedglobal-args-helper`) for the citty syntax.
 5. **Exit codes.** Restate the canon (0/2/3/4/5/7/10) and ask whether any domain-specific codes are needed.
 6. **Errors.** Confirm `fail()` is the only path to non-zero exits — no raw `throw`. Ask whether their API has auth/rate-limit shapes that need a custom classifier.
 7. **Caching.** Three layers: HTTP TTL, local sync store, `--data-source`. Pick à la carte. If they pick "all three", warn that sync is non-trivial — schema drift, partial syncs, eviction.
@@ -48,13 +50,12 @@ End the session by:
 
 Argument: `<name>` (e.g., `acme-cli`).
 
-1. **Resolve the destination.** Compute the default: parent of the `cli-skill` repo + `<name>`. (E.g., if `cli-skill` is at `/Users/gilles/dev/xp/cli-skill/`, default = `/Users/gilles/dev/xp/<name>/`.) Never default to anywhere inside `cli-skill/`. If the user invoked from outside this repo, default to `<cwd>/<name>/`.
+1. **Resolve the destination.** Default to `<cwd>/<name>/`, where `<cwd>` is the user's current working directory. Never default to anywhere inside `${CLAUDE_PLUGIN_ROOT}`. If `<cwd>` is the user's home directory or filesystem root, ask the user instead.
 2. **Confirm with the user via `AskUserQuestion`** before copying. Offer:
-   - the computed default
-   - current directory (`<cwd>/<name>/`)
+   - the computed default (`<cwd>/<name>/`)
    - elsewhere — let the user paste a path
    Treat user-provided paths literally; expand `~` to `$HOME` if present.
-3. Copy: `cp -R /Users/gilles/dev/xp/cli-skill/docs/design-cli/scaffold/ <dest>/`. Refuse if `<dest>` already exists; ask the user how to proceed.
+3. Copy: `cp -R "${CLAUDE_PLUGIN_ROOT}/docs/design-cli/scaffold/" <dest>/`. Refuse if `<dest>` already exists; ask the user how to proceed.
 4. **Rename `demo-cli` → `<name>` everywhere.** Don't hard-code the file list — sweep with `grep -rl demo-cli <dest>/` and rewrite each hit (skip `node_modules`, `dist`, `.tmp`). Robust against future scaffold edits.
 5. Run `cd <dest> && bun install`. Confirm it succeeds.
 6. Run `bun run build`. Confirm `./dist/<name>` is produced.
@@ -85,14 +86,14 @@ Argument: `<path>` to an existing CLI directory or binary.
      "mcpBin": "<absolute-path-to-mcp-binary>" }
    ```
    Pull the best-guess values from the CLI's `--help` output. If you can't guess confidently, ask the user.
-5. Run `bun run /Users/gilles/dev/xp/cli-skill/tools/design-cli-verify/src/verify.ts <verify.json>`.
-6. Map each rule result back to `docs/design-cli/checklist.md` for the human-readable explanation.
+5. Run `bun run "${CLAUDE_PLUGIN_ROOT}/tools/design-cli-verify/src/verify.ts" <verify.json>`.
+6. Map each rule result back to `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/checklist.md` for the human-readable explanation.
 7. For each failure, propose the smallest patch that fixes it. Cite the recipe (e.g., "see `recipes.md` recipe 4 for `agent-context`"). For `skill-*` failures, the fix is usually editing SKILL.md — point at the offending line. For `mcp-twin-shape` failures, check the EXCLUDED_PATHS list in the user's `mcp/tools.ts`.
 8. End with: a summary line (`X pass, Y warn, Z fail`), the rung the CLI is on, and the next rung's payoff.
 
 ## Always do
 
-- **Ground every recommendation in a pattern from `principles.md`.** If you can't, you're freelancing — stop and reread the principles.
+- **Ground every recommendation in a pattern from `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/principles.md`.** If you can't, you're freelancing — stop and reread the principles.
 - **Use bun, not npm/npx, in every command you suggest.** This is a saved preference.
 - **Cite file:line when referencing the source corpus** (e.g., `linear/SKILL.md:147` for `--select` semantics).
 - **Don't implement the CLI ↔ SKILL.md ↔ MCP twin pattern**. It's earmarked as a follow-up; mentioning it is enough.
