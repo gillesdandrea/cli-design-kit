@@ -8,25 +8,29 @@ Working code for every pattern in `principles.md`, in [citty](https://github.com
 
 ```ts
 // src/flags.ts
-export const globalArgs = {
-  json:        { type: "boolean", description: "Force JSON output", default: false },
-  compact:     { type: "boolean", description: "Drop to high-gravity fields only", default: false },
-  select:      { type: "string",  description: "Dotted-path field projection (id,name,items.owner.name)" },
-  quiet:       { type: "boolean", description: "Suppress non-essential output", default: false },
-  noColor:     { type: "boolean", description: "Disable ANSI", default: false },
-  noInput:     { type: "boolean", description: "Fail instead of prompting", default: false },
-  yes:         { type: "boolean", description: "Skip confirmation prompts", default: false },
-  dryRun:      { type: "boolean", description: "Show what would happen, don't execute", default: false },
-  noCache:     { type: "boolean", description: "Bypass HTTP cache", default: false },
-  dataSource:  { type: "enum",    options: ["auto", "live"], default: "auto", description: "Local store or live API" },
-  agent:       { type: "boolean", description: "Preset: --json --compact --no-input --no-color --yes", default: false },
-  profile:     { type: "string",  description: "Named flag profile to apply" },
-} as const;
+import type { ArgsDef } from "citty";
 
-export function withGlobals<T extends Record<string, unknown>>(localArgs: T) {
+export const globalArgs = {
+  json:          { type: "boolean", description: "Force JSON output", default: false },
+  compact:       { type: "boolean", description: "Drop to high-gravity fields only", default: false },
+  select:        { type: "string",  description: "Dotted-path field projection (id,name,items.owner.name)" },
+  quiet:         { type: "boolean", description: "Suppress non-essential output", default: false },
+  "no-color":    { type: "boolean", description: "Disable ANSI colors", default: false },
+  "no-input":    { type: "boolean", description: "Fail instead of prompting", default: false },
+  yes:           { type: "boolean", description: "Skip confirmation prompts", default: false },
+  "dry-run":     { type: "boolean", description: "Show what would happen, don't execute", default: false },
+  "no-cache":    { type: "boolean", description: "Bypass HTTP cache", default: false },
+  "data-source": { type: "string",  default: "auto", description: "Data source: auto|live" },
+  agent:         { type: "boolean", description: "Preset: --json --compact --no-input --no-color --yes", default: false },
+  profile:       { type: "string",  description: "Apply a saved flag profile" },
+} as const satisfies ArgsDef;
+
+export function withGlobals<T extends ArgsDef>(localArgs: T): T & typeof globalArgs {
   return { ...globalArgs, ...localArgs };
 }
 ```
+
+Note: kebab-case keys (`"no-color"`) become kebab-case CLI flags (`--no-color`). Citty 0.1.6's `ArgDef` is `string | boolean | positional` only; `enum` arrives in 0.2.x.
 
 Citty has no native "before-run hook" across the tree; we expand `--agent` with a small helper that every command's `run()` calls first.
 
@@ -34,17 +38,26 @@ Citty has no native "before-run hook" across the tree; we expand `--agent` with 
 
 ```ts
 // src/agent-preset.ts
-import type { ParsedArgs } from "citty";
+export type CommonArgs = {
+  agent?: boolean;
+  json?: boolean;
+  compact?: boolean;
+  "no-input"?: boolean;
+  "no-color"?: boolean;
+  yes?: boolean;
+};
 
-export function applyAgentPreset(args: ParsedArgs): void {
+export function applyAgentPreset(args: CommonArgs): void {
   if (!args.agent) return;
   args.json = true;
   args.compact = true;
-  args.noInput = true;
-  args.noColor = true;
+  args["no-input"] = true;
+  args["no-color"] = true;
   args.yes = true;
 }
 ```
+
+Why a hand-rolled `CommonArgs` instead of citty's `ParsedArgs<...>`? `ParsedArgs` is generic over the args definition and has no fixed properties — destructuring it loses information. A small interface that names what we mutate is type-safe and self-documenting.
 
 Call `applyAgentPreset(args)` at the top of every `run()`. The preset is a documented contract — bumping its expansion is a minor version of the CLI.
 
@@ -52,25 +65,29 @@ Call `applyAgentPreset(args)` at the top of every `run()`. The preset is a docum
 
 ```ts
 // src/output.ts
-import { applyAgentPreset } from "./agent-preset";
+import { applyAgentPreset, type CommonArgs } from "./agent-preset";
+import { project } from "./select"; // recipe 7
 
 export type Mode = "json" | "human";
 
-export function pickMode(args: { json?: boolean }): Mode {
-  applyAgentPreset(args as never);
+export type EmitArgs = CommonArgs & { select?: string; quiet?: boolean };
+
+export function pickMode(args: EmitArgs): Mode {
+  applyAgentPreset(args);
   if (args.json) return "json";
   if (!process.stdout.isTTY) return "json"; // piped → JSON
   return "human";
 }
 
-export function colorEnabled(args: { noColor?: boolean }): boolean {
-  if (args.noColor) return false;
+export function colorEnabled(args: EmitArgs): boolean {
+  if (args["no-color"]) return false;
   if (process.env.NO_COLOR) return false;
   if (!process.stdout.isTTY) return false;
   return true;
 }
 
-export function emit(payload: unknown, args: { json?: boolean; compact?: boolean; select?: string; noColor?: boolean }, render?: (p: unknown) => string): void {
+export function emit(payload: unknown, args: EmitArgs, render?: (p: unknown) => string): void {
+  if (args.quiet) return;
   const mode = pickMode(args);
   if (mode === "json") {
     const projected = args.select ? project(payload, args.select.split(",")) : payload;
@@ -81,9 +98,6 @@ export function emit(payload: unknown, args: { json?: boolean; compact?: boolean
 }
 
 function defaultRender(p: unknown): string { return typeof p === "string" ? p : JSON.stringify(p, null, 2); }
-
-// stub — see recipe 7 for project()
-declare function project(value: unknown, paths: string[]): unknown;
 ```
 
 ## 3 — Typed exit codes + classified errors
@@ -234,22 +248,23 @@ export default defineCommand({
     title: { type: "string", required: true, description: "Issue title" },
   }),
   async run({ args }) {
-    applyAgentPreset(args as never);
-    const payload = { title: args.title, createdAt: new Date().toISOString() };
-    if (args.dryRun) {
+    applyAgentPreset(args);
+    const payload = { title: String(args.title), createdAt: new Date().toISOString() };
+    if (args["dry-run"]) {
       emit({ wouldCreate: payload }, args);
       return;
     }
-    if (!args.yes && process.stdin.isTTY && !args.noInput) {
-      // Only prompt when interactive AND --yes not set AND --no-input not set.
-      // (In a real CLI: use prompts/inquirer here.)
-      process.stderr.write(`About to create issue "${args.title}". Re-run with --yes to skip this prompt.\n`);
-      process.exit(0);
+    const interactive = process.stdin.isTTY && !args["no-input"];
+    if (!args.yes && !interactive) {
+      fail("usage", "refusing to create without --yes in non-interactive mode", {
+        hint: "pass --yes (or --agent) to proceed; --dry-run to preview",
+        json: !!args.json,
+      });
     }
-    if (!args.yes && (args.noInput || !process.stdin.isTTY)) {
-      fail("usage", "refusing to create without --yes in non-interactive mode", { json: !!args.json });
+    if (!args.yes && interactive) {
+      process.stderr.write(`About to create issue "${payload.title}". Re-run with --yes to skip this notice.\n`);
+      return;
     }
-    // Actually do the work…
     emit({ created: payload }, args);
   },
 });
@@ -360,12 +375,12 @@ import { store } from "../store";
 export default defineCommand({
   meta: { name: "sync", description: "Populate the local store from the API" },
   async run() {
-    const live = await fetch("https://api.example.com/issues").then(r => r.json()) as unknown[];
+    const live = (await fetch("https://api.example.com/issues").then(r => r.json())) as { id: string }[];
     const stmt = store.prepare(`INSERT OR REPLACE INTO issues (id, json, syncedAt) VALUES (?, ?, ?)`);
     const tx = store.transaction((rows: { id: string; json: string }[]) => {
       for (const r of rows) stmt.run(r.id, r.json, Date.now());
     });
-    tx(live.map((i: { id: string }) => ({ id: i.id, json: JSON.stringify(i) })));
+    tx(live.map(i => ({ id: i.id, json: JSON.stringify(i) })));
     process.stdout.write(`synced ${live.length} issues\n`);
   },
 });
@@ -476,7 +491,10 @@ export default defineCommand({
     save: defineCommand({
       meta: { name: "save" },
       args: { name: { type: "positional", required: true }, json: { type: "string", required: true } },
-      run({ args }) { db.run(`INSERT OR REPLACE INTO profiles (name, json) VALUES (?, ?)`, [args.name, args.json]); },
+      run({ args }) {
+        // Citty positional/string args are typed `string | boolean | string[]` — narrow with String().
+        db.run(`INSERT OR REPLACE INTO profiles (name, json) VALUES (?, ?)`, [String(args.name), String(args.json)]);
+      },
     }),
     list: defineCommand({
       meta: { name: "list" },

@@ -1,0 +1,9 @@
+{
+  "name": "cli-skill",
+  "version": "0.1.0",
+  "description": "Design CLIs that work for humans and AI agents.",
+  "private": true,
+  "scripts": {
+    "recipes-check": "bun run tools/recipes-check/src/check.ts"
+  }
+}

@@ -48,12 +48,18 @@ End the session by:
 
 Argument: `<name>` (e.g., `acme-cli`).
 
-1. Copy `docs/design-cli/scaffold/` to `<name>/` (use `cp -R`).
-2. Rename: search-replace `demo-cli` → `<name>` across `package.json`, `src/cli.ts`, `src/commands/version.ts`, `src/commands/completion.ts`, `src/commands/agent-context.ts`, `src/commands/feedback.ts`, `src/cache.ts`, `src/store.ts`, `src/commands/profile.ts`, `README.md`, `.design-cli-verify.json`.
-3. Run `cd <name> && bun install`. Confirm it succeeds.
-4. Run `bun run build`. Confirm `./dist/<name>` is produced.
-5. Run `bun run audit`. Expect all checks green; if any fails, that's a bug in the scaffold — fix it before declaring done.
-6. Tell the user: where the scaffold landed, what to change first (their API client + `which` index), and the rung they're at (rung 2 — output formatting).
+1. **Resolve the destination.** Compute the default: parent of the `cli-skill` repo + `<name>`. (E.g., if `cli-skill` is at `/Users/gilles/dev/xp/cli-skill/`, default = `/Users/gilles/dev/xp/<name>/`.) Never default to anywhere inside `cli-skill/`. If the user invoked from outside this repo, default to `<cwd>/<name>/`.
+2. **Confirm with the user via `AskUserQuestion`** before copying. Offer:
+   - the computed default
+   - current directory (`<cwd>/<name>/`)
+   - elsewhere — let the user paste a path
+   Treat user-provided paths literally; expand `~` to `$HOME` if present.
+3. Copy: `cp -R /Users/gilles/dev/xp/cli-skill/docs/design-cli/scaffold/ <dest>/`. Refuse if `<dest>` already exists; ask the user how to proceed.
+4. **Rename `demo-cli` → `<name>` everywhere.** Don't hard-code the file list — sweep with `grep -rl demo-cli <dest>/` and rewrite each hit (skip `node_modules`, `dist`, `.tmp`). Robust against future scaffold edits.
+5. Run `cd <dest> && bun install`. Confirm it succeeds.
+6. Run `bun run build`. Confirm `./dist/<name>` is produced.
+7. Run `bun run audit`. Expect 15/15 green; if any rule fails, that's a bug in the scaffold — fix it before declaring done.
+8. Tell the user: where the scaffold landed (absolute path), what to change first (their API client + the `which` capability index), and the Creativity-Ladder rung they're at (rung 2 — output formatting).
 
 ## Audit mode
 
