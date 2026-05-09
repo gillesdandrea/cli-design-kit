@@ -1,7 +1,9 @@
 {
-  "name": "cli-skill",
+  "name": "cli-design-kit",
   "description": "Design CLIs that work for both humans and AI agents — guided session, audit, and scaffold modes.",
   "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/gillesdandrea/cli-design-kit",
   "author": {
     "name": "Gilles d'Andrea",
     "email": "gilles.dandrea@eyelite.net"
