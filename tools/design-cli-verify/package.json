@@ -6,6 +6,9 @@
   "bin": {
     "design-cli-verify": "./src/verify.ts"
   },
+  "scripts": {
+    "test": "bun test src/skill-parse.test.ts"
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/bun": "latest",

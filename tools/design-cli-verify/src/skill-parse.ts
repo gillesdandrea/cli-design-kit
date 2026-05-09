@@ -11,7 +11,16 @@ export type SkillState = {
   skillText: string;
   commonFlags: Set<string>;
   knownPaths: string[];
+  booleanFlags: Set<string>;
 };
+
+/** Collect every flag name that's declared as boolean on the root or any subcommand. */
+export function collectBooleanFlags(ctx: AgentContextV2): Set<string> {
+  const out = new Set<string>();
+  for (const f of ctx.globalFlags) if (f.type === "boolean") out.add(f.name);
+  for (const c of ctx.commands) for (const f of c.flags) if (f.type === "boolean") out.add(f.name);
+  return out;
+}
 
 export type SkillLoad =
   | { kind: "ok"; state: SkillState }
@@ -32,9 +41,10 @@ export async function loadSkillState(
     return { kind: "skipped", reason: `agent-context unavailable (${(e as Error).message})` };
   }
   const knownPaths = ctx.commands.map(c => c.path);
-  const parsed = parseSkill(skillText, ctx.cli.name, knownPaths);
+  const booleanFlags = collectBooleanFlags(ctx);
+  const parsed = parseSkill(skillText, ctx.cli.name, knownPaths, booleanFlags);
   const commonFlags = new Set([...DEFAULT_COMMON_FLAGS, ...(config.commonFlags ?? [])]);
-  return { kind: "ok", state: { ctx, parsed, skillPath, skillText, commonFlags, knownPaths } };
+  return { kind: "ok", state: { ctx, parsed, skillPath, skillText, commonFlags, knownPaths, booleanFlags } };
 }
 
 export type Recipe = {
@@ -63,8 +73,15 @@ export async function fetchAgentContext(spawn: () => Promise<{ exitCode: number;
   return obj;
 }
 
-/** Parse a SKILL.md text into recipes + inline command references. */
-export function parseSkill(text: string, cliBinary: string, knownPaths: string[]): ParsedSkill {
+/** Parse a SKILL.md text into recipes + inline command references. `booleanFlags` is the set of flag
+ *  names declared as boolean anywhere in the agent-context — used by the value-consumption heuristic
+ *  so positionals after `--json`, `--quiet`, etc. aren't lost. */
+export function parseSkill(
+  text: string,
+  cliBinary: string,
+  knownPaths: string[],
+  booleanFlags: Set<string> = new Set(),
+): ParsedSkill {
   const lines = text.split("\n");
   const recipes: Recipe[] = [];
   const inlineCommands: InlineCommand[] = [];
@@ -77,7 +94,7 @@ export function parseSkill(text: string, cliBinary: string, knownPaths: string[]
     if (!buffer) return;
     const tokens = tokenize(replaceShellSubstitutions(buffer.text));
     if (tokens[0] === cliBinary) {
-      const r = classifyTokens(tokens.slice(1), knownPaths, buffer.line);
+      const r = classifyTokens(tokens.slice(1), knownPaths, booleanFlags, buffer.line);
       if (r) recipes.push(r);
     }
     buffer = null;
@@ -194,26 +211,32 @@ export function tokenize(line: string): string[] {
   return out;
 }
 
-/** Walk tokens; classify into cmdPath / positionals / flags. Uses knownPaths for greedy disambiguation. */
-function classifyTokens(tokens: string[], knownPaths: string[], line: number): Recipe | null {
+/** Walk tokens; classify into cmdPath / positionals / flags. Uses knownPaths for greedy disambiguation
+ *  and `booleanFlags` to decide whether a flag consumes the next token as its value. */
+function classifyTokens(
+  tokens: string[],
+  knownPaths: string[],
+  booleanFlags: Set<string>,
+  line: number,
+): Recipe | null {
   if (tokens.length === 0) return null;
 
   const flags: string[] = [];
   const nonFlags: string[] = [];
 
-  // Skip flag values (the token immediately after a non-`=` flag with `string` semantics).
-  // Without command context, we can't be sure which flags consume values, so a heuristic:
-  // a token after `--name` that doesn't start with `-` is a value iff `--name` doesn't match
-  // a known boolean. Since we don't know that here, assume value-consumption when the flag
-  // has no inline `=`. Mark consumed values so they don't show up as positionals.
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i] ?? "";
     if (tok.startsWith("--")) {
       const eq = tok.indexOf("=");
       const name = (eq >= 0 ? tok.slice(2, eq) : tok.slice(2)).trim();
       if (name) flags.push(name);
-      if (eq < 0 && i + 1 < tokens.length && !(tokens[i + 1] ?? "").startsWith("-")) {
-        // Heuristic: assume next token is the value. Skip it.
+      // Consume the next token as a value only when:
+      //   (a) the flag has no inline `=`, AND
+      //   (b) a next token exists and isn't another flag, AND
+      //   (c) the flag isn't declared boolean anywhere in the agent-context.
+      // Without (c) we'd eat positional args after every boolean (e.g. `cli ex list --json id`
+      // would lose `id`).
+      if (eq < 0 && i + 1 < tokens.length && !(tokens[i + 1] ?? "").startsWith("-") && !booleanFlags.has(name)) {
         i++;
       }
       continue;

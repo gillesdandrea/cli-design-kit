@@ -1,7 +1,8 @@
 import type { Rule, AgentContextV2 } from "../types";
 import { run } from "../run";
 
-const EXCLUDED_PATHS = new Set([
+/** Fallback denylist applied only when the agent-context has no `framework: true` annotations. */
+const LEGACY_EXCLUDED_PATHS = new Set([
   "agent-context", "completion", "doctor", "feedback", "help", "mcp", "profile", "version", "which",
 ]);
 
@@ -10,12 +11,27 @@ function isCommandGroup(path: string, allPaths: string[]): boolean {
   return allPaths.some(p => p !== path && p.startsWith(prefix));
 }
 
+type AgentCmd = AgentContextV2["commands"][number];
+
+function isFrameworkCmd(cmd: AgentCmd, all: AgentCmd[]): boolean {
+  if (cmd.framework === true) return true;
+  const parts = cmd.path.split(" ");
+  for (let n = parts.length - 1; n >= 1; n--) {
+    const ancestor = all.find(c => c.path === parts.slice(0, n).join(" "));
+    if (ancestor?.framework === true) return true;
+  }
+  return false;
+}
+
 function expectedToolCount(ctx: AgentContextV2): number {
   const all = ctx.commands.map(c => c.path);
+  const annotated = ctx.commands.some(c => c.framework === true);
   let n = 0;
   for (const cmd of ctx.commands) {
-    if (EXCLUDED_PATHS.has(cmd.path.split(" ")[0] ?? "")) continue;
-    if (EXCLUDED_PATHS.has(cmd.path)) continue;
+    const excluded = annotated
+      ? isFrameworkCmd(cmd, ctx.commands)
+      : LEGACY_EXCLUDED_PATHS.has(cmd.path.split(" ")[0] ?? "") || LEGACY_EXCLUDED_PATHS.has(cmd.path);
+    if (excluded) continue;
     if (isCommandGroup(cmd.path, all)) continue;
     n++;
   }

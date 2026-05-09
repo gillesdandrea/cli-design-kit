@@ -1,17 +1,15 @@
 import type { AgentCommand, AgentContext } from "../agent-context-builder";
 
-/** Commands excluded from MCP tool generation. Matches printing-press's framework denylist + `mcp` itself. */
-export const EXCLUDED_PATHS = new Set([
-  "agent-context",
-  "completion",
-  "doctor",
-  "feedback",
-  "help",
-  "mcp",
-  "profile",
-  "version",
-  "which",
-]);
+/** True when the command itself, or any ancestor along its path, is annotated `framework: true`. */
+export function isFrameworkCmd(cmd: AgentCommand, all: AgentCommand[]): boolean {
+  if (cmd.framework === true) return true;
+  const parts = cmd.path.split(" ");
+  for (let n = parts.length - 1; n >= 1; n--) {
+    const ancestor = all.find(c => c.path === parts.slice(0, n).join(" "));
+    if (ancestor?.framework === true) return true;
+  }
+  return false;
+}
 
 export type McpTool = {
   name: string;
@@ -45,8 +43,7 @@ export function buildToolsFromContext(ctx: AgentContext): McpTool[] {
   const tools: McpTool[] = [];
 
   for (const cmd of ctx.commands) {
-    if (EXCLUDED_PATHS.has(cmd.path.split(" ")[0] ?? "")) continue;
-    if (EXCLUDED_PATHS.has(cmd.path)) continue;
+    if (isFrameworkCmd(cmd, ctx.commands)) continue;
     if (isCommandGroup(cmd.path, allPaths)) continue;
 
     const properties: Record<string, unknown> = {};

@@ -15,7 +15,7 @@ export function loadProfile(name: string): Record<string, unknown> | null {
 }
 
 export default defineCommand({
-  meta: { name: "profile", description: "Save / load named flag profiles" },
+  meta: { name: "profile", description: "Save / load named flag profiles", framework: true },
   subCommands: {
     save: defineCommand({
       meta: { name: "save", description: "Save a profile (--json '{\"data-source\":\"live\"}')" },

@@ -6,6 +6,7 @@ export default defineCommand({
     name: "mcp",
     description: "Run an MCP server exposing this CLI's commands as tools (stdio transport).",
     readOnly: true,
+    framework: true,
   },
   async run() {
     await runMcpServer();

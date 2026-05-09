@@ -27,6 +27,8 @@ export type AgentContextV2 = {
     path: string;
     description?: string;
     readOnly?: boolean;
+    /** When true, this command (and all its descendants) is excluded from MCP tool generation. */
+    framework?: boolean;
     flags: { name: string; type: "string" | "boolean"; description?: string }[];
     positionals: { name: string; required: boolean; description?: string }[];
   }[];

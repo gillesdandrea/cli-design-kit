@@ -1,7 +1,7 @@
 import { defineCommand } from "citty";
 
 export default defineCommand({
-  meta: { name: "feedback", description: "Open a prefilled GitHub issue URL", readOnly: true },
+  meta: { name: "feedback", description: "Open a prefilled GitHub issue URL", readOnly: true, framework: true },
   run() {
     const body = encodeURIComponent(
       `Version: 0.1.0\nNode/Bun: ${process.versions.bun ?? process.version}\nOS: ${process.platform}\n\n---\n\n`

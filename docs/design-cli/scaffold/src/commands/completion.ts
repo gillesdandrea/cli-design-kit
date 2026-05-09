@@ -40,7 +40,7 @@ const fish = (cli: string, cmds: string[]) =>
   `complete -c ${cli} -f -n "__fish_use_subcommand" -a "${cmds.join(" ")}"\n`;
 
 export default defineCommand({
-  meta: { name: "completion", description: "Output a shell completion script (bash|zsh|fish)", readOnly: true },
+  meta: { name: "completion", description: "Output a shell completion script (bash|zsh|fish)", readOnly: true, framework: true },
   args: {
     shell: { type: "positional", required: true, valueHint: "bash|zsh|fish" },
   },

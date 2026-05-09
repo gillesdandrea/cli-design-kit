@@ -19,6 +19,8 @@ export type AgentCommand = {
   description?: string;
   /** When set, MCP tools may emit readOnlyHint / destructiveHint accordingly. */
   readOnly?: boolean;
+  /** When true, this command (and its descendants) is excluded from MCP tool generation. */
+  framework?: boolean;
   flags: AgentFlag[];
   positionals: AgentPositional[];
 };
@@ -77,7 +79,7 @@ function classifyArgs(
 }
 
 async function walk(node: CommandDef, pathParts: string[], out: AgentCommand[]): Promise<void> {
-  const meta = ((await resolveValue(node.meta)) ?? {}) as { description?: string; readOnly?: boolean };
+  const meta = ((await resolveValue(node.meta)) ?? {}) as { description?: string; readOnly?: boolean; framework?: boolean };
   const args = await resolveValue(node.args);
   const subCommands = ((await resolveValue(node.subCommands)) ?? {}) as Record<string, Resolvable<CommandDef>>;
 
@@ -87,6 +89,7 @@ async function walk(node: CommandDef, pathParts: string[], out: AgentCommand[]):
       path: pathParts.join(" "),
       ...(meta.description !== undefined && { description: meta.description }),
       ...(meta.readOnly !== undefined && { readOnly: meta.readOnly }),
+      ...(meta.framework !== undefined && { framework: meta.framework }),
       flags,
       positionals,
     });

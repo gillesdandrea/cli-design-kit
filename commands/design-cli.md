@@ -89,8 +89,10 @@ Argument: `<path>` to an existing CLI directory or binary.
    Pull the best-guess values from the CLI's `--help` output. If you can't guess confidently, ask the user.
 5. Run `bun run "${CLAUDE_PLUGIN_ROOT}/tools/design-cli-verify/src/verify.ts" <verify.json>`.
 6. Map each rule result back to `${CLAUDE_PLUGIN_ROOT}/docs/design-cli/checklist.md` for the human-readable explanation.
-7. For each failure, propose the smallest patch that fixes it. Cite the recipe (e.g., "see `recipes.md` recipe 4 for `agent-context`"). For `skill-*` failures, the fix is usually editing SKILL.md — point at the offending line. For `mcp-twin-shape` failures, check the EXCLUDED_PATHS list in the user's `mcp/tools.ts`.
+7. For each failure, propose the smallest patch that fixes it. Cite the recipe (e.g., "see `recipes.md` recipe 4 for `agent-context`"). For `skill-*` failures, the fix is usually editing SKILL.md — point at the offending line. For `mcp-twin-shape` failures, check whether the user's framework commands are correctly annotated `meta: { framework: true }` (see the note below).
 8. End with: a summary line (`X pass, Y warn, Z fail`), the rung the CLI is on, and the next rung's payoff.
+
+> Note on `mcp-twin-shape` failures: the verifier prefers the `framework: true` annotation on commands in `agent-context.commands[]`. If the count cross-check is off, look at which commands the user has (or hasn't) annotated as framework — those are the ones excluded from MCP tool generation. The verifier falls back to a small built-in denylist (`agent-context`, `completion`, `doctor`, `feedback`, `mcp`, `profile`, `version`, `which`) only when no commands are annotated at all.
 
 ## Always do
 

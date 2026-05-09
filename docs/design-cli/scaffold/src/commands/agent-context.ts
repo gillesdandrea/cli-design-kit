@@ -19,7 +19,7 @@ export function setRoot(fn: () => CommandDef): void {
 }
 
 export default defineCommand({
-  meta: { name: "agent-context", description: "Emit the CLI's machine-readable schema (versioned JSON)", readOnly: true },
+  meta: { name: "agent-context", description: "Emit the CLI's machine-readable schema (versioned JSON)", readOnly: true, framework: true },
   async run() {
     const fn = getRoot;
     if (!fn) {
