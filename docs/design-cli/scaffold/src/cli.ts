@@ -7,7 +7,7 @@ import example from "./commands/example";
 import which from "./commands/which";
 import agentContext, { setRoot as setAgentContextRoot } from "./commands/agent-context";
 import version from "./commands/version";
-import completion from "./commands/completion";
+import completion, { setRoot as setCompletionRoot } from "./commands/completion";
 import doctor from "./commands/doctor";
 import profile from "./commands/profile";
 import sync from "./commands/sync";
@@ -34,8 +34,9 @@ const main = defineCommand({
     mcp,
   },
 });
-// `main` is narrowed by `globalArgs as const`; setter wants generic CommandDef.
+// `main` is narrowed by `globalArgs as const`; setters want generic CommandDef.
 setAgentContextRoot(() => main as unknown as CommandDef);
+setCompletionRoot(() => main as unknown as CommandDef);
 
 const rawArgs = process.argv.slice(2);
 

@@ -20,8 +20,8 @@ Then `/design-cli` is available in any project.
   - [`principles.md`](docs/design-cli/principles.md) — 13 patterns + the Creativity Ladder + anti-patterns. Framework-agnostic.
   - [`recipes.md`](docs/design-cli/recipes.md) — the same patterns translated to `citty`.
   - [`checklist.md`](docs/design-cli/checklist.md) — audit items, each tagged with a verifier rule ID.
-  - [`scaffold/`](docs/design-cli/scaffold/) — a `bun` + `citty` starter that ships all 13 patterns and passes the verifier 15/15 out of the box.
-- **`tools/design-cli-verify/`** — runtime verifier. 15 rules. Language-agnostic; works on any CLI binary.
+  - [`scaffold/`](docs/design-cli/scaffold/) — a `bun` + `citty` starter that ships all 13 patterns and passes the verifier cleanly out of the box.
+- **`tools/design-cli-verify/`** — runtime verifier. Language-agnostic; works on any CLI binary.
 - **`tools/recipes-check/`** — extracts the TypeScript snippets from `recipes.md` and `tsc --noEmit`s them, so the docs can't rot.
 - **`.claude-plugin/`** — plugin + marketplace manifests.
 
@@ -30,7 +30,7 @@ Then `/design-cli` is available in any project.
 ```sh
 /design-cli                        # guided session
 /design-cli scaffold acme-cli      # generate a citty starter
-/design-cli audit ./path/to/cli    # check against the 15 rules
+/design-cli audit ./path/to/cli    # check against every verifier rule
 ```
 
 From a shell (for repo dev work, not plugin users):

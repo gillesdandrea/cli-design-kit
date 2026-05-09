@@ -57,10 +57,11 @@ Argument: `<name>` (e.g., `acme-cli`).
    Treat user-provided paths literally; expand `~` to `$HOME` if present.
 3. Copy: `cp -R "${CLAUDE_PLUGIN_ROOT}/docs/design-cli/scaffold/" <dest>/`. Refuse if `<dest>` already exists; ask the user how to proceed.
 4. **Rename `demo-cli` → `<name>` everywhere.** Don't hard-code the file list — sweep with `grep -rl demo-cli <dest>/` and rewrite each hit (skip `node_modules`, `dist`, `.tmp`). Robust against future scaffold edits.
-5. Run `cd <dest> && bun install`. Confirm it succeeds.
-6. Run `bun run build`. Confirm `./dist/<name>` is produced.
-7. Run `bun run audit`. Expect 15/15 green; if any rule fails, that's a bug in the scaffold — fix it before declaring done.
-8. Tell the user: where the scaffold landed (absolute path), what to change first (their API client + the `which` capability index), and the Creativity-Ladder rung they're at (rung 2 — output formatting).
+5. **Rewrite the audit script path.** The scaffold's `package.json` ships `"audit": "bun run ../../../tools/design-cli-verify/src/verify.ts ./.design-cli-verify.json"` — that relative path resolves only from inside `cli-skill/docs/design-cli/scaffold/`, so `bun run audit` will fail from `<dest>`. Replace the `../../../tools/design-cli-verify/src/verify.ts` segment with the absolute path you resolved at session start: `${CLAUDE_PLUGIN_ROOT}/tools/design-cli-verify/src/verify.ts`. Use `Edit` on `<dest>/package.json` directly, not `sed`.
+6. Run `cd <dest> && bun install`. Confirm it succeeds.
+7. Run `bun run build`. Confirm `./dist/<name>` is produced.
+8. Run `bun run audit`. Expect every rule green; the verifier prints `N pass, 0 warn, 0 fail` on success. If any rule fails, that's a bug in the scaffold — fix it before declaring done.
+9. Tell the user: where the scaffold landed (absolute path), what to change first (their API client + the `which` capability index), and the Creativity-Ladder rung they're at (rung 2 — output formatting).
 
 ## Audit mode
 
